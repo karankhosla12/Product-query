@@ -177,39 +177,45 @@
       return response.json();
     }
 
-  document.getElementById("submitBtn").addEventListener("click", async () => {
-  const userQuery = document.getElementById("queryInput").value;
-  const apiData = {
-    inputs: userQuery,
-    parameters: { candidate_labels: products }
-  };
+    document.getElementById("submitBtn").addEventListener("click", async () => {
+      const userQuery = document.getElementById("queryInput").value;
+      if (!userQuery) {
+        document.getElementById("outputBox").value = "Please enter a query.";
+        return;
+      }
+      
+      const apiData = {
+        inputs: userQuery,
+        parameters: { candidate_labels: products }
+      };
 
-  try {
-    // Query the Hugging Face API
-    const apiResponse = await queryAPI(apiData);
-    const product = apiResponse.labels[0]; // Get the top-matched label
+      try {
+        // Query the Hugging Face API
+        const apiResponse = await queryAPI(apiData);
+        const product = apiResponse.labels[0]; // Get the top-matched label
 
-    // Construct the URL for inserting the query into the database
-    const dbApiUrl = `https://chatbot.karankhosla99.workers.dev/api/query?query=${encodeURIComponent(userQuery)}&product=${encodeURIComponent(product)}`;
+        // Construct the URL for inserting the query into the database
+        const dbApiUrl = `https://chatbot.karankhosla99.workers.dev/api/query?query=${encodeURIComponent(userQuery)}&product=${encodeURIComponent(product)}`;
 
-    // Call the database API to insert the query
-    const dbResponse = await fetch(dbApiUrl, { method: "GET" });
+        // Call the database API to insert the query
+        const dbResponse = await fetch(dbApiUrl, { method: "GET" });
 
-    // Check if the response from the database API is valid
-    const dbResult = await dbResponse.json();
+        if (!dbResponse.ok) {
+          throw new Error("Failed to insert query into the database.");
+        }
 
-    // Log the dbResponse to check its structure
-    console.log(dbResult);
+        const dbResult = await dbResponse.json();
 
-    // Display the result in the output box
-    document.getElementById("outputBox").value = product;
-    } 
-  } catch (error) {
-    console.error(error);
-    document.getElementById("outputBox").value = "An error occurred.";
-  }
-});
+        // Log the dbResponse to check its structure
+        console.log(dbResult);
 
+        // Display the result in the output box
+        document.getElementById("outputBox").value = `Query submitted successfully. Product: ${product}`;
+      } catch (error) {
+        console.error(error);
+        document.getElementById("outputBox").value = `An error occurred: ${error.message}`;
+      }
+    });
 
     document.getElementById("fetchQueriesBtn").addEventListener("click", async () => {
       const selectedProduct = productDropdown.value;
@@ -224,10 +230,10 @@
         const response = await fetch(getQueryUrl, { method: "GET" });
         const queries = await response.json();
 
-        if (queries.success) {
-          document.getElementById("outputBox").value = JSON.stringify(queries, null, 2);
-        } else {
+        if (queries.length === 0) {
           document.getElementById("outputBox").value = "No queries found for the selected product.";
+        } else {
+          document.getElementById("outputBox").value = JSON.stringify(queries, null, 2);
         }
       } catch (error) {
         console.error(error);
