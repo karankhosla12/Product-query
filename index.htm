@@ -1,0 +1,45 @@
+export default {
+  async fetch(request, env) {
+    const { pathname, searchParams } = new URL(request.url);
+
+    if (pathname === "/api/query") {
+      const query = searchParams.get("query");
+      const product = searchParams.get("product");
+
+      if (!query || !product) {
+        return new Response("Missing query or product parameter", {
+          status: 400,
+          headers: { "Content-Type": "text/plain" },
+        });
+      }
+
+      try {
+        // Fetch the current max ID
+        const { results: idResults } = await env.query.prepare(
+          "SELECT MAX(Id) as maxId FROM Chatbot"
+        ).run();
+        const nextId = (idResults[0]?.maxId || 0) + 1;
+
+        // Insert new data
+        const { results } = await env.query.prepare(
+          "INSERT INTO Chatbot (Id, Query, Product) VALUES (?, ?, ?)"
+        )
+          .bind(nextId, query, product)
+          .run();
+
+        return new Response(JSON.stringify(results), {
+          headers: { "Content-Type": "application/json" },
+        });
+      } catch (error) {
+        return new Response(`Error: ${error.message}`, {
+          headers: { "Content-Type": "text/plain" },
+        });
+      }
+    }
+
+    return new Response(
+      "Call /api/query with 'query' and 'product' parameters to write into the database",
+      { headers: { "Content-Type": "text/plain" } }
+    );
+  },
+};
