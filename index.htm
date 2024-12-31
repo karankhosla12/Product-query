@@ -68,7 +68,7 @@
 
         // Call the backend API with query and product
         const dbApiUrl = `https://chatbot.karankhosla99.workers.dev/api/query?query=${encodeURIComponent(userQuery)}&product=${encodeURIComponent(product)}`;
-        const dbResponse = await fetch(dbApiUrl, { method: "GET" });
+        const dbResponse = await fetch(dbApiUrl, { method: "POST" });
         const dbResult = await dbResponse.json();
         console.log("Database API Result:", dbResult);
       } catch (error) {
