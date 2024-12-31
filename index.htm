@@ -177,31 +177,44 @@
       return response.json();
     }
 
-    document.getElementById("submitBtn").addEventListener("click", async () => {
-      const userQuery = document.getElementById("queryInput").value;
-      const apiData = {
-        inputs: userQuery,
-        parameters: { candidate_labels: products }
-      };
+  document.getElementById("submitBtn").addEventListener("click", async () => {
+  const userQuery = document.getElementById("queryInput").value;
+  const apiData = {
+    inputs: userQuery,
+    parameters: { candidate_labels: products }
+  };
 
-      try {
-        const apiResponse = await queryAPI(apiData);
-        const product = apiResponse.labels[0]; // Top-matched label
-        const dbApiUrl = `https://chatbot.karankhosla99.workers.dev/api/query?query=${encodeURIComponent(userQuery)}&product=${encodeURIComponent(product)}`;
-        const dbResponse = await fetch(dbApiUrl, { method: "GET" });
-        const dbResult = await dbResponse.json();
+  try {
+    // Query the Hugging Face API
+    const apiResponse = await queryAPI(apiData);
+    const product = apiResponse.labels[0]; // Get the top-matched label
 
-        // Check if the response contains valid data
-        if (dbResult && dbResult.success) {
-          document.getElementById("outputBox").value = JSON.stringify(dbResult, null, 2);
-        } else {
-          document.getElementById("outputBox").value = "No data available or an error occurred.";
-        }
-      } catch (error) {
-        console.error(error);
-        document.getElementById("outputBox").value = "An error occurred.";
-      }
-    });
+    // Construct the URL for inserting the query into the database
+    const dbApiUrl = `https://chatbot.karankhosla99.workers.dev/api/query?query=${encodeURIComponent(userQuery)}&product=${encodeURIComponent(product)}`;
+
+    // Call the database API to insert the query
+    const dbResponse = await fetch(dbApiUrl, { method: "GET" });
+
+    // Check if the response from the database API is valid
+    const dbResult = await dbResponse.json();
+
+    // Log the dbResponse to check its structure
+    console.log(dbResult);
+
+    // Display the result in the output box
+    if (dbResult && dbResult[0]) {
+      // Assuming dbResult is an array and the first item contains the query and product
+      const output = `Query: ${dbResult[0].Query}\nProduct: ${dbResult[0].Product}`;
+      document.getElementById("outputBox").value = output;
+    } else {
+      document.getElementById("outputBox").value = "No data available for the query.";
+    }
+  } catch (error) {
+    console.error(error);
+    document.getElementById("outputBox").value = "An error occurred.";
+  }
+});
+
 
     document.getElementById("fetchQueriesBtn").addEventListener("click", async () => {
       const selectedProduct = productDropdown.value;
