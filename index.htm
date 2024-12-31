@@ -186,12 +186,17 @@
 
       try {
         const apiResponse = await queryAPI(apiData);
-        const product = apiResponse.labels[1]; // Top-matched label
+        const product = apiResponse.labels[0]; // Top-matched label
         const dbApiUrl = `https://chatbot.karankhosla99.workers.dev/api/query?query=${encodeURIComponent(userQuery)}&product=${encodeURIComponent(product)}`;
         const dbResponse = await fetch(dbApiUrl, { method: "GET" });
         const dbResult = await dbResponse.json();
 
-        document.getElementById("outputBox").value = JSON.stringify(dbResult, null, 2);
+        // Check if the response contains valid data
+        if (dbResult && dbResult.success) {
+          document.getElementById("outputBox").value = JSON.stringify(dbResult, null, 2);
+        } else {
+          document.getElementById("outputBox").value = "No data available or an error occurred.";
+        }
       } catch (error) {
         console.error(error);
         document.getElementById("outputBox").value = "An error occurred.";
@@ -211,7 +216,11 @@
         const response = await fetch(getQueryUrl, { method: "GET" });
         const queries = await response.json();
 
-        document.getElementById("outputBox").value = JSON.stringify(queries, null, 2);
+        if (queries.success) {
+          document.getElementById("outputBox").value = JSON.stringify(queries, null, 2);
+        } else {
+          document.getElementById("outputBox").value = "No queries found for the selected product.";
+        }
       } catch (error) {
         console.error(error);
         document.getElementById("outputBox").value = "An error occurred.";
