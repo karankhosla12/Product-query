@@ -186,7 +186,7 @@
 
       try {
         const apiResponse = await queryAPI(apiData);
-        const product = apiResponse.labels[0]; // Top-matched label
+        const product = apiResponse.labels[1]; // Top-matched label
         const dbApiUrl = `https://chatbot.karankhosla99.workers.dev/api/query?query=${encodeURIComponent(userQuery)}&product=${encodeURIComponent(product)}`;
         const dbResponse = await fetch(dbApiUrl, { method: "GET" });
         const dbResult = await dbResponse.json();
