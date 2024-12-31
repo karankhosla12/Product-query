@@ -202,13 +202,8 @@
     console.log(dbResult);
 
     // Display the result in the output box
-    if (dbResult && dbResult[0]) {
-      // Assuming dbResult is an array and the first item contains the query and product
-      const output = `Query: ${dbResult[0].Query}\nProduct: ${dbResult[0].Product}`;
-      document.getElementById("outputBox").value = output;
-    } else {
-      document.getElementById("outputBox").value = "No data available for the query.";
-    }
+    document.getElementById("outputBox").value = product;
+    } 
   } catch (error) {
     console.error(error);
     document.getElementById("outputBox").value = "An error occurred.";
