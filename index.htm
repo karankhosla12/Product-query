@@ -6,41 +6,130 @@
   <title>Product Query</title>
   <style>
     body {
-      font-family: Arial, sans-serif;
-      margin: 20px;
-      line-height: 1.6;
+      font-family: 'Arial', sans-serif;
+      background-color: #f5faff;
+      color: #333;
+      margin: 0;
+      padding: 20px;
     }
-    input, button, textarea {
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      background: #ffffff;
+      border-radius: 8px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      padding: 20px;
+    }
+    h1 {
+      text-align: center;
+      color: #004080;
+    }
+    input, textarea, select, button {
       width: 100%;
       margin: 10px 0;
       padding: 10px;
+      border: 1px solid #dcdcdc;
+      border-radius: 4px;
     }
     textarea {
-      height: 150px;
+      height: 120px;
     }
-    .checkbox-group {
+    button {
+      background-color: #004080;
+      color: #fff;
+      border: none;
+      cursor: pointer;
+      font-size: 16px;
+      font-weight: bold;
+      transition: background-color 0.3s ease;
+    }
+    button:hover {
+      background-color: #003060;
+    }
+    .switch-container {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
       margin: 20px 0;
     }
-    .checkbox-group label {
-      display: block;
-      margin: 5px 0;
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 50px;
+      height: 24px;
+    }
+    .switch input {
+      display: none;
+    }
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: #ccc;
+      border-radius: 24px;
+      transition: 0.4s;
+    }
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 18px;
+      width: 18px;
+      left: 4px;
+      bottom: 3px;
+      background-color: white;
+      border-radius: 50%;
+      transition: 0.4s;
+    }
+    input:checked + .slider {
+      background-color: #004080;
+    }
+    input:checked + .slider:before {
+      transform: translateX(26px);
+    }
+    .output-container {
+      margin-top: 20px;
     }
   </style>
 </head>
 <body>
-  <h1>Product Query</h1>
-  <p>What product are you looking for?</p>
-  <input type="text" id="queryInput" placeholder="I need tools for automation">
-  <button id="submitBtn">Submit</button>
-  
-  <h3>Select a product to view related queries:</h3>
-  <div class="checkbox-group" id="productCheckboxes">
-    <!-- Checkboxes will be added dynamically -->
-  </div>
-  <button id="fetchQueriesBtn">Fetch Queries</button>
+  <div class="container">
+    <h1>Product Query</h1>
 
-  <h3>Output:</h3>
-  <textarea id="outputBox" readonly></textarea>
+    <!-- Query Submission Section -->
+    <div id="querySection">
+      <label for="queryInput">Submit your query:</label>
+      <input type="text" id="queryInput" placeholder="Type your query here">
+      <button id="submitBtn">Submit Query</button>
+    </div>
+
+    <!-- Product Selection Section -->
+    <div id="productSection" style="display: none;">
+      <label for="productDropdown">Select a product to view related queries:</label>
+      <select id="productDropdown">
+        <option value="" disabled selected>Select a product</option>
+      </select>
+      <button id="fetchQueriesBtn">Fetch Queries</button>
+    </div>
+
+    <!-- Flip Switch -->
+    <div class="switch-container">
+      <span>Submit Query</span>
+      <label class="switch">
+        <input type="checkbox" id="toggleSwitch">
+        <span class="slider"></span>
+      </label>
+      <span>View Queries</span>
+    </div>
+
+    <!-- Output Box -->
+    <div class="output-container">
+      <label for="outputBox">Output:</label>
+      <textarea id="outputBox" readonly></textarea>
+    </div>
+  </div>
 
   <script>
     const products = [
@@ -49,16 +138,28 @@
       "Salesforce marketing cloud", "powerapps"
     ];
 
-    // Dynamically add checkboxes for products
-    const checkboxContainer = document.getElementById("productCheckboxes");
+    // Populate dropdown with product options
+    const productDropdown = document.getElementById("productDropdown");
     products.forEach(product => {
-      const label = document.createElement("label");
-      const checkbox = document.createElement("input");
-      checkbox.type = "checkbox";
-      checkbox.value = product;
-      label.appendChild(checkbox);
-      label.appendChild(document.createTextNode(product));
-      checkboxContainer.appendChild(label);
+      const option = document.createElement("option");
+      option.value = product;
+      option.textContent = product;
+      productDropdown.appendChild(option);
+    });
+
+    // Toggle between Submit and View sections
+    const toggleSwitch = document.getElementById("toggleSwitch");
+    const querySection = document.getElementById("querySection");
+    const productSection = document.getElementById("productSection");
+
+    toggleSwitch.addEventListener("change", () => {
+      if (toggleSwitch.checked) {
+        querySection.style.display = "none";
+        productSection.style.display = "block";
+      } else {
+        querySection.style.display = "block";
+        productSection.style.display = "none";
+      }
     });
 
     async function queryAPI(data) {
@@ -73,62 +174,46 @@
           body: JSON.stringify(data),
         }
       );
-      const result = await response.json();
-      return result;
+      return response.json();
     }
 
     document.getElementById("submitBtn").addEventListener("click", async () => {
       const userQuery = document.getElementById("queryInput").value;
       const apiData = {
         inputs: userQuery,
-        parameters: {
-          candidate_labels: products,
-        }
+        parameters: { candidate_labels: products }
       };
 
       try {
         const apiResponse = await queryAPI(apiData);
-        const output = JSON.stringify(apiResponse, null, 2);
-        document.getElementById("outputBox").value = output;
-
-        // Extract top label from API response
-        const product = apiResponse.labels[0]; // Assuming labels exist in response
-
-        // Call the backend API with query and product
+        const product = apiResponse.labels[0]; // Top-matched label
         const dbApiUrl = `https://chatbot.karankhosla99.workers.dev/api/query?query=${encodeURIComponent(userQuery)}&product=${encodeURIComponent(product)}`;
         const dbResponse = await fetch(dbApiUrl, { method: "GET" });
         const dbResult = await dbResponse.json();
-        console.log("Database API Result:", dbResult);
+
+        document.getElementById("outputBox").value = JSON.stringify(dbResult, null, 2);
       } catch (error) {
-        console.error("Error:", error);
+        console.error(error);
         document.getElementById("outputBox").value = "An error occurred.";
       }
     });
 
     document.getElementById("fetchQueriesBtn").addEventListener("click", async () => {
-      // Get selected products
-      const selectedProducts = Array.from(
-        document.querySelectorAll(".checkbox-group input:checked")
-      ).map(checkbox => checkbox.value);
+      const selectedProduct = productDropdown.value;
 
-      if (selectedProducts.length === 0) {
-        document.getElementById("outputBox").value = "Please select at least one product.";
+      if (!selectedProduct) {
+        document.getElementById("outputBox").value = "Please select a product.";
         return;
       }
 
       try {
-        const results = [];
-        for (const product of selectedProducts) {
-          const getQueryUrl = `https://chatbot.karankhosla99.workers.dev/api/get-query?product=${encodeURIComponent(product)}`;
-          const response = await fetch(getQueryUrl, { method: "GET" });
-          const queries = await response.json();
-          results.push({ product, queries });
-        }
+        const getQueryUrl = `https://chatbot.karankhosla99.workers.dev/api/get-query?product=${encodeURIComponent(selectedProduct)}`;
+        const response = await fetch(getQueryUrl, { method: "GET" });
+        const queries = await response.json();
 
-        // Display results
-        document.getElementById("outputBox").value = JSON.stringify(results, null, 2);
+        document.getElementById("outputBox").value = JSON.stringify(queries, null, 2);
       } catch (error) {
-        console.error("Error fetching queries:", error);
+        console.error(error);
         document.getElementById("outputBox").value = "An error occurred.";
       }
     });
